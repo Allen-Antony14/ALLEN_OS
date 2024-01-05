@@ -1,0 +1,79 @@
+//open and close file
+alias userSP R1;
+alias curPID R2;
+alias processTable R3;
+userSP=SP;
+curPID=[SYSTEM_STATUS_TABLE+1];
+processTable=PROCESS_TABLE+curPID*16;
+[processTable+13]=SP;
+SP=[processTable+11]*512-1;
+
+alias syscall R4;
+R4=[[PTBR+2*(userSP-5)/512]*512+(userSP-5)%512];
+[processTable+9]=syscall;
+
+//open
+if(syscall==2) then
+    alias fName R4;
+    fName=[[PTBR+2*(userSP-4)/512]*512+(userSP-4)%512];
+    alias resourceTable R5;
+    resourceTable=[processTable+11]*512+RESOURCE_TABLE_OFFSET;
+    alias i R6;
+    i=0;
+    while(i<8) do
+        if([resourceTable+2*i]==-1) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+    if(i==16) then
+        R11=-3;
+        goto ex;
+    endif;
+    multipush(R1,R2,R3,R4,R5,R6);
+    R1=OPEN;
+    R2=fName;
+    call FILE_MANAGER;
+    multipop(R1,R2,R3,R4,R5,R6);
+    if(R0==-1) then
+        R11=R0;
+        goto ex;
+    endif;
+    [resourceTable+2*i]=FILE;
+    [resourceTable+2*i+1]=R0;
+    R11=i;
+    goto ex;
+endif;
+
+//close
+if(syscall==3) then
+    alias fDesc R4;
+    fDesc=[[PTBR+2*(userSP-4)/512]*512+(userSP-4)%512];
+    if(fDesc<0 || fDesc>7) then
+        R11=-1;
+        goto ex;
+    endif;
+    alias resourceTable R5;
+    resourceTable=[processTable+11]*512+RESOURCE_TABLE_OFFSET+fDesc*2;
+    if([resourceTable]!=FILE) then
+        R11=-1;
+        goto ex;
+    endif;
+    alias fileIndex R6;
+    R6=[resourceTable+1];
+    multipush(R1,R2,R3,R4,R5,R6);
+    R1=CLOSE;
+    R2=fileIndex;
+    call FILE_MANAGER;
+    multipop(R1,R2,R3,R4,R5,R6);
+    [resourceTable]=-1;
+    [resourceTable+1]=-1;
+    R11=0;
+    goto ex;
+endif;
+
+ex:
+    SP=userSP;
+    [processTable+9]=0;
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=R11;
+    ireturn;
