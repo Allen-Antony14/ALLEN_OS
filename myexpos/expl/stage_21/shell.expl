@@ -1,0 +1,35 @@
+
+
+int main()
+{
+    decl
+        int temp,pid;
+        str s;
+    enddecl
+    begin 
+        while(1<2) do
+            temp=exposcall("Write",-2,"enter command");
+            temp=exposcall("Read",-1,s);
+            if(s=="Abishek") then
+                temp=exposcall("Write",-2,"gay");
+            endif;
+            if(s=="Shutdown") then
+                temp=exposcall("Shutdown");
+            else
+                pid=exposcall("Fork");
+                if(pid!=0) then
+                    temp=exposcall("Wait",pid);
+                endif;
+                if(pid==0) then
+                    temp=exposcall("Exec",s);
+                    if(temp==-1 AND s!="Abishek") then
+        	            temp=exposcall("Write",-2,"BAD COMMAND");
+        	            temp=exposcall("Exit");
+                    endif;
+                endif;
+            endif;
+        endwhile;
+        return 0;
+    end
+
+}

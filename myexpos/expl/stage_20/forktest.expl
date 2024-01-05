@@ -1,0 +1,19 @@
+int main()
+{
+	decl
+		int temp;
+		int n;
+	enddecl
+
+	begin
+		temp = exposcall ("Fork");
+		if( (temp == 0) ) then
+			//child process
+			n = exposcall("Exec", "even_2.xsm");
+		else
+			//parent process
+			n = exposcall("Exec", "odd_2.xsm");
+		endif;
+		return 0;
+	end
+}

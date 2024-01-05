@@ -1,0 +1,28 @@
+decl
+	int n;
+    int a;
+    int b;
+	
+	int i, j;
+	int tmp;
+    int temp;
+	int maxelem;
+enddecl
+
+int main()
+{
+	begin
+
+		tmp = exposcall("Read", -1, a);
+			tmp = exposcall("Read", -1, b);
+
+		while((b!=0)) do
+           temp=b;
+           b=a%b;
+           a=temp;
+        endwhile;
+			tmp = exposcall("Write", -2, a);
+			i = i + 1;
+		return 0;
+	end
+}
