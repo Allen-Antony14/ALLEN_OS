@@ -1,0 +1,21 @@
+int main()
+{
+	decl
+		int temp, num;
+		str s;
+	enddecl
+
+	begin
+        
+		num = 2;
+        temp = exposcall ("Write", -2, num);
+		while( num <99  ) do
+			num = num - 1;
+		    temp = exposcall ("Write", -2, num);
+			
+			num = num + 3;
+            temp = exposcall ("Write", -2, num);   
+		endwhile;
+		return 0;
+	end
+}

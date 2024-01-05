@@ -1,0 +1,28 @@
+int main()
+{
+    decl
+        int temp,fileDesc;
+        string fileName,input,word;
+    enddecl
+    begin
+        temp = exposcall("Write",-2,"filename");
+        temp = exposcall("Read",-1, input); 
+        if(input != "sample.dat") then
+            begin
+		    num = 1;
+		        while( num <=2047  ) do
+			        if( ((num % 2) == 1) ) then
+				        temp = exposcall ("Write", -2, num);
+			        endif;
+			        num = num + 1;
+		        endwhile;
+		    return 0;
+	        end
+        else
+            temp = exposcall("Write",-2,"There is a place where the sidewalk ends");
+           
+        return 0;
+    end
+}
+
+
