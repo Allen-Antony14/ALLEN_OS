@@ -1,0 +1,16 @@
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13]=SP;  // switching to kernel stack of current process;
+SP= [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512-1;  // set SP to beginning of user area page
+backup;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE +1]*16 +4]=READY;  // set status to ready
+alias process_no R0;
+process_no=0;
+while(process_no<16) do
+    [PROCESS_TABLE + process_no*16]=[PROCESS_TABLE +process_no*16]+1;
+    process_no=process_no+1;
+endwhile;
+call SCHEDULER;   // calling scheduler
+restore;
+SP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13];   // make SP to new SP of new process
+[PROCESS_TABLE +[SYSTEM_STATUS_TABLE + 1]*16 + 9]=0;  //MODE flag =0 
+
+ireturn;
