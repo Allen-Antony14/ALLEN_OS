@@ -1,0 +1,21 @@
+MOV R0, 0
+MOV R2, 99
+MOV P1, 1
+loop1:
+OUT 
+loop2:
+EQ R2,R0
+JNZ R2,END
+MOV R0,0
+MOV R2, 99
+ADD R0,1
+MOV R1,R0
+MOV P1,R0
+MOD R1,2
+EQ R1,1
+JNZ R1,loop1 
+JMP loop2
+
+END:
+HALT
+

@@ -1,0 +1,14 @@
+MOV R0,-1
+MOV R2,0
+loop:
+ADD R0,2
+
+MOV R1,99
+EQ R1,R0
+MOV P1,R0
+
+OUT 
+JZ R1,loop
+
+
+HALT

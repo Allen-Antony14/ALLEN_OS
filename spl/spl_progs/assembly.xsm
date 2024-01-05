@@ -1,0 +1,15 @@
+MOV R0,1
+MOV R1,5
+MOV R3,1
+loop:
+MOV R2,R1
+EQ R2,R0
+JNZ R2, out_loop
+MUL R3,R1
+SUB R1,1
+JMP loop
+
+out_loop:
+PORT P1,R3
+OUT
+HALT
