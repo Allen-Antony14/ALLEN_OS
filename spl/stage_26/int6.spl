@@ -1,0 +1,99 @@
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=7;
+
+alias userSP R1;
+alias curPID R2;
+alias processTable R3;
+userSP=SP;
+curPID=[SYSTEM_STATUS_TABLE+1];
+processTable=PROCESS_TABLE+curPID*16;
+[processTable+13]=userSP;
+SP=[processTable+11]*512 -1;
+
+alias pageTable R4;
+pageTable=PAGE_TABLE_BASE+20*curPID;
+
+alias fileDesc R5;
+fileDesc=[[pageTable+2*(userSP-4)/512]*512+(userSP-4)%512];
+
+alias varAddr R6;
+varAddr=[[pageTable+2*(userSP-3)/512]*512+(userSP-3)%512];
+
+if(fileDesc==-1) then
+	multipush(R1,R2,R3,R4,R5,R6);
+	R1=TERMINAL_READ;
+	R2=[SYSTEM_STATUS_TABLE+1];
+	R3=varAddr;
+	call MOD_4;
+	multipop(R1,R2,R3,R4,R5,R6);
+	R11=0;
+    goto ex;
+else
+	if(fileDesc<0 || fileDesc>7) then
+	  R11=-1;
+	  goto ex;
+	endif;
+	alias resTable  R7;
+	resTable=[processTable+11]*512+RESOURCE_TABLE_OFFSET+fileDesc*2;
+	if([resTable]!=FILE) then
+	  R11=-1;
+	  goto ex;
+	endif;
+	alias fileIndex R8;
+	alias inodeIndex R9;
+	fileIndex=[resTable+1];
+	inodeIndex=[OPEN_FILE_TABLE+4*fileIndex];
+	multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+	R1=ACQUIRE_INODE;
+	R3=curPID;
+	R2=inodeIndex; 
+	call MOD_0;
+	multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+	if(R0==-1) then
+	  R11=-1;
+	  goto ex;
+	endif;
+	alias lseek R10;
+	lseek=[OPEN_FILE_TABLE+4*fileIndex+2];
+	if(inodeIndex==INODE_ROOT) then
+	  if(lseek==480) then
+	    call relInode;
+	    R11=-2;
+	    goto ex;
+	  endif;	  
+	  [[PTBR+2*(varAddr/512)]*512+(varAddr%512)]=[ROOT_FILE+lseek];
+	  [OPEN_FILE_TABLE+4*fileIndex+2]=lseek+1;
+	else
+	  if(lseek==[INODE_TABLE+16*inodeIndex+2]) then
+	    call relInode;
+	    R11=-2;
+	    goto ex;	    
+	  endif;
+	  alias diskBlock R12;
+	  diskBlock=[INODE_TABLE+16*inodeIndex+8+(lseek/512)];
+	  multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R12);
+	  R1=BUFFERED_READ;
+	  R2=diskBlock;
+	  R3=(lseek%512);
+	  R4=[PTBR+2*(varAddr/512)]*512+(varAddr%512);	
+	  call FILE_MANAGER;
+	  multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R12);
+	  [OPEN_FILE_TABLE+4*fileIndex+2]=lseek+1;
+	endif;	
+	call relInode;
+	R11=0;
+	goto ex;
+	relInode:
+  	multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+	R1=RELEASE_INODE;
+	R3=curPID;
+	R2=inodeIndex;
+	call RESOURCE_MANAGER;
+	multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+	return;
+endif;
+
+ex:
+  [[pageTable+2*(userSP-1)/512]*512+(userSP-1)%512]= R11;
+  [processTable+9]=0;
+  SP=userSP;
+  ireturn;

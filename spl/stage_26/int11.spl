@@ -1,0 +1,68 @@
+alias curPID R1;
+R1=[SYSTEM_STATUS_TABLE+1];
+alias userSP R2;
+R2=SP;
+alias syscall R3;
+[PROCESS_TABLE+curPID*16+13]=SP;
+SP=[PROCESS_TABLE+curPID*16+11]*512-1;
+
+//extract syscall from user stack
+R3=[[PTBR+2*(userSP-5)/512]*512+(userSP-5)%512];
+[PROCESS_TABLE+curPID*16+9]=R3;
+
+alias processTable R4;
+R4=PROCESS_TABLE+curPID*16;
+
+//wait
+if(R3==13) then
+    alias PID R5;
+    R5=[[PTBR+2*(userSP-4)/512]*512+(userSP-4)%512];
+    if(R5==R1||[PROCESS_TABLE+R5*16+4]==TERMINATED||R5<1||R5>15) then
+        [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=-1; 
+        [processTable+9]=0;
+        SP=[processTable+13];
+        ireturn;
+    endif;
+    [processTable+4]=WAIT_PROCESS;
+    [processTable+5]=R5;
+    multipush(R1,R2,R3,R4,R5);
+    call MOD_5;
+    multipop(R1,R2,R3,R4,R5);
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=0;
+    [processTable+9]=0;
+    SP=[processTable+13];
+    ireturn;
+endif;
+
+//singal
+if(R3==14) then
+    alias i R5;
+    i=1;
+    while(i<MAX_PROC_NUM) do
+        if([PROCESS_TABLE+16*i+4]==WAIT_PROCESS && [PROCESS_TABLE+16*i+5]==curPID) then
+            [PROCESS_TABLE+16*i+4]=READY;
+            [PROCESS_TABLE+16*i+5]=0;
+        endif;
+        i=i+1;
+    endwhile;
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=0;
+    [processTable+9]=0;
+    SP=[processTable+13];
+    ireturn;
+endif;
+
+//getpid
+if(R3==11) then
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=curPID;
+    [processTable+9]=0;
+    SP=[processTable+13];
+    ireturn;
+endif;
+
+//getppid
+if(R3==12) then
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=[processTable+2];
+    [processTable+9]=0;
+    SP=[processTable+13];
+    ireturn;
+endif;

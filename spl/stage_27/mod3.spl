@@ -1,0 +1,139 @@
+//FILE_MANAGER
+alias fNum R1;
+//buffered read or write
+if(fNum==2 || fNum==1) then
+    alias disk R2;
+    alias offset R3;
+    alias varAddr R4;
+    alias buffer R5;
+    buffer=disk%4;
+    multipush(R1,R2,R3,R4,R5);
+    R1=ACQUIRE_BUFFER;
+    R2=buffer;
+    R3=[SYSTEM_STATUS_TABLE+1];
+    call MOD_0;
+    multipop(R1,R2,R3,R4,R5);
+    if([BUFFER_TABLE+4*buffer]!=disk) then
+        if([BUFFER_TABLE+4*buffer+1]==1) then
+            multipush(R1,R2,R3,R4,R5);
+            R1=DISK_STORE;
+            //R4 before R2 so that R2 doesnt change
+            R4=[BUFFER_TABLE+4*buffer];
+            R2=[SYSTEM_STATUS_TABLE+1];
+            R3=BUFFER_BASE+buffer;
+            call MOD_4;
+            multipop(R1,R2,R3,R4,R5);
+            [BUFFER_TABLE+4*buffer+1]=0;
+        endif;
+        multipush(R1,R2,R3,R4,R5);
+        R1=DISK_LOAD;
+        R4=disk;
+        R2=[SYSTEM_STATUS_TABLE+1];
+        R3=BUFFER_BASE+buffer;
+        call MOD_4;
+        multipop(R1,R2,R3,R4,R5);
+        [BUFFER_TABLE+4*buffer]=disk;
+    endif;
+    if(fNum==2) then
+        [varAddr]=[BUFFER+buffer*512+offset];
+    endif;
+    if(fNum==1) then
+        [BUFFER+buffer*512+offset]=varAddr;
+        [BUFFER_TABLE+buffer*4+1]=1;
+    endif;
+    R1=RELEASE_BUFFER;
+    R2=buffer;
+    R3=[SYSTEM_STATUS_TABLE+1];
+    call MOD_0;
+    return;
+endif;
+
+//open
+if(fNum==3) then
+    alias fName R2;
+    alias i R3;
+    i=0;
+    while(i<MAX_FILE_NUM) do    
+        if([INODE_TABLE+16*i+1]==fName) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+    if(i==MAX_FILE_NUM) then
+        R0=-1;
+        return;
+    endif;
+    //ACQUIRE_INODE
+    multipush(R1,R2,R3);
+    R1=ACQUIRE_INODE;
+    R2=i;
+    R3=[SYSTEM_STATUS_TABLE+1];
+    call MOD_0;
+    multipop(R1,R2,R3);
+    if(R0==-1) then
+        R0=-1;
+        return;
+    endif;
+    if([INODE_TABLE+16*i]==EXEC) then
+        R0=-1;
+        return;
+    endif;
+    //save inode index, i
+    R4=i;
+    i=0;
+    while(i<MAX_OPENFILE_NUM) do
+        if([OPEN_FILE_TABLE+4*i]==-1) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+    if(i==MAX_OPENFILE_NUM) then
+        R0=-2;
+        return;
+    endif;
+    if(fName=="root") then
+        [OPEN_FILE_TABLE+4*i]=INODE_ROOT;
+    else
+        [OPEN_FILE_TABLE+4*i]=R4;
+        if([FILE_STATUS_TABLE+4*R4+1]==-1) then
+            [FILE_STATUS_TABLE+4*R4+1]=1;
+        else
+            [FILE_STATUS_TABLE+4*R4+1]=[FILE_STATUS_TABLE+4*R4+1]+1;
+        endif;
+    endif;
+    //open instance count and lseek
+    [OPEN_FILE_TABLE+4*i+1]=1;
+    [OPEN_FILE_TABLE+4*i+2]=0;
+    //release inode
+    multipush(R1,R2,R3,R4);
+    R1=5;
+    R2=R4;
+    R3=[SYSTEM_STATUS_TABLE+1];
+    call MOD_0;
+    multipop(R1,R2,R3,R4);
+    R0=i;
+    return;
+endif;
+
+//close
+if(fNum==4) then
+    alias fileIndex R2;
+    alias inodeIndex R3;
+    alias fileTable R4;
+    fileTable=OPEN_FILE_TABLE+4*fileIndex;
+    inodeIndex=[fileTable];
+    [fileTable+1]=[fileTable+1]-1;
+    if([fileTable+1]==0) then
+        [fileTable]=-1;
+        [fileTable+1]=-1;
+        [fileTable+2]=-1;
+        [fileTable+3]=-1;
+        if(inodeIndex!=INODE_ROOT) then
+            [FILE_STATUS_TABLE+inodeIndex*4+1]=[FILE_STATUS_TABLE+inodeIndex*4+1]-1;
+            if([FILE_STATUS_TABLE+inodeIndex*4+1]==0) then
+                [FILE_STATUS_TABLE+inodeIndex*4+1]=-1;
+            endif;
+        endif;
+    endif;
+    return;
+endif;
