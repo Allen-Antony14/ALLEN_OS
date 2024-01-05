@@ -1,0 +1,45 @@
+fdisk
+load --os $HOME/myexpos/spl/stage_26_u/os_startup.xsm
+load --library ../expl/library.lib
+load --exhandler $HOME/myexpos/spl/stage_26/exhandler.xsm
+load --int=disk $HOME/myexpos/spl/stage_26/int2.xsm
+load --int=timer $HOME/myexpos/spl/stage_26/timer.xsm
+load --int=console $HOME/myexpos/spl/stage_26/int3.xsm
+load --int=4 $HOME/myexpos/spl/stage_26/int4.xsm
+load --int=5 $HOME/myexpos/spl/stage_25/int5.xsm
+load --int=6 $HOME/myexpos/spl/stage_26/int6.xsm
+load --int=7 $HOME/myexpos/spl/stage_25/int7.xsm
+load --int=8 $HOME/myexpos/spl/stage_26/int8.xsm
+load --int=9 $HOME/myexpos/spl/stage_26/int9.xsm
+load --int=10 $HOME/myexpos/spl/stage_26/int10.xsm
+load --int=11 $HOME/myexpos/spl/stage_26/int11.xsm
+load --int=13 $HOME/myexpos/spl/stage_26/int13.xsm
+load --int=14 $HOME/myexpos/spl/stage_26/int14.xsm
+load --int=15 $HOME/myexpos/spl/stage_26_u/int15.xsm
+load --int=12 $HOME/myexpos/spl/stage_26_u/int12.xsm
+load --int=16 $HOME/myexpos/spl/stage_26_u/int16.xsm
+load --int=17 $HOME/myexpos/spl/stage_26_u/int17.xsm
+load --module 0 $HOME/myexpos/spl/stage_26/mod0.xsm
+load --module 1 $HOME/myexpos/spl/stage_25/mod1.xsm
+load --module 2 $HOME/myexpos/spl/stage_25/mod2.xsm
+load --module 3 $HOME/myexpos/spl/stage_25/mod3.xsm
+load --module 4 $HOME/myexpos/spl/stage_26/mod4.xsm
+load --module 5 $HOME/myexpos/spl/stage_26/mod5.xsm
+load --module 7 $HOME/myexpos/spl/stage_26_u/bootmod.xsm
+load --init $HOME/myexpos/expl/stage_26_u/login.xsm
+load --exec $HOME/myexpos/expl/stage_24/fread.xsm
+load --exec $HOME/myexpos/expl/stage_21/read_1a.xsm
+load --idle $HOME/myexpos/expl/stage_23/idle.xsm
+load --data $HOME/myexpos/expl/stage_24/sample.dat
+load --data $HOME/myexpos/expl/stage_24/number.dat
+load --exec $HOME/myexpos/expl/stage_25/a_25_1.xsm
+load --exec $HOME/myexpos/expl/stage_25/rm.xsm
+load --exec $HOME/myexpos/expl/stage_25/cp.xsm
+load --exec $HOME/myexpos/expl/stage_25/cat.xsm
+load --exec $HOME/myexpos/expl/stage_25/ls.xsm
+load --exec $HOME/myexpos/expl/stage_26_u/lu.xsm
+load --exec $HOME/myexpos/expl/stage_26_u/ru.xsm
+load --shell $HOME/myexpos/expl/stage_26_u/extshell.xsm
+load --exec $HOME/myexpos/expl/stage_26_u/shell.xsm
+load --exec $HOME/myexpos/expl/stage_26_u/newru.xsm
+load --exec $HOME/myexpos/expl/stage_26_u/newf.xsm
