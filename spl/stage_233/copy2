@@ -1,0 +1,24 @@
+#load --module 3 $HOME/myexpos/spl/stage_23a/file_manager.xsm
+load --int=4 $HOME/myexpos/spl/stage_23a/int4.xsm
+load --int=5 $HOME/myexpos/spl/stage_23a/int5.xsm
+load --int=6 $HOME/myexpos/spl/stage_23a/int6.xsm
+load --int=7 $HOME/myexpos/spl/stage_23a/int7.xsm
+load --int=8 $HOME/myexpos/spl/stage_23a/int8.xsm
+load --int=9 $HOME/myexpos/spl/stage_23a/int9.xsm
+load --int=10 $HOME/myexpos/spl/stage_23a/int10.xsm
+load --int=11 $HOME/myexpos/spl/stage_23a/int11.xsm
+load --int=13 $HOME/myexpos/spl/stage_23a/int13.xsm
+load --int=14 $HOME/myexpos/spl/stage_23a/int14.xsm
+load --int=15 $HOME/myexpos/spl/stage_23a/int15.xsm
+load --int=console $HOME/myexpos/spl/stage_23a/int_console.xsm
+load --int=disk $HOME/myexpos/spl/stage_23a/int_disk.xsm
+load --exhandler $HOME/myexpos/spl/stage_23a/int_exception.xsm
+load --int=timer $HOME/myexpos/spl/stage_23a/inttimer.xsm
+load --module 2 $HOME/myexpos/spl/stage_23a/memory_man.xsm
+load --module 5 $HOME/myexpos/spl/stage_23a/mod5.xsm
+load --module 1 $HOME/myexpos/spl/stage_23a/process_man.xsm
+load --module 0 $HOME/myexpos/spl/stage_23a/resource_manager.xsm
+load --os $HOME/myexpos/spl/stage_23a/os_startup.xsm
+load --module 7 $HOME/myexpos/spl/stage_23a/boot_mod7.xsm
+load --module 4 $HOME/myexpos/spl/stage_23a/dev_man.xsm
+

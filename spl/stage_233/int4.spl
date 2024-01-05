@@ -1,0 +1,151 @@
+//CREATE and Delete files
+alias userSP R1;
+alias curPID R2;
+alias processTable R3;
+userSP=SP;
+curPID=[SYSTEM_STATUS_TABLE+1];
+processTable=PROCESS_TABLE+16*curPID;
+[processTable+13]=SP;
+SP=[processTable+11]*512-1;
+
+//get syscall number and set mode flag
+alias syscall R4;
+R4=[[PTBR+2*(userSP-5)/512]*512+(userSP-5)%512];
+[processTable+9]=syscall;
+
+//CREATE
+if(syscall==1) then
+    alias fileName R5;
+    alias perms R6;
+    fileName=[[PTBR+2*(userSP-4)/512]*512+(userSP-4)%512];
+    perms=[[PTBR+2*(userSP-3)/512]*512+(userSP-3)%512];
+    alias i R7;
+    i=1;
+    //max no of files is 60
+    while(i<MAX_FILE_NUM) do
+        if([INODE_TABLE+i*16+1]==fileName) then
+            R11=0;
+            goto ex;
+        endif;
+        i=i+1;
+    endwhile;
+    i=1;
+    while(i<MAX_FILE_NUM) do    
+        if([INODE_TABLE+i*16+1]==-1) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+    if(i==MAX_FILE_NUM) then
+        R11=-1;
+        goto ex;
+    endif;
+    [INODE_TABLE+16*i+1]=fileName;
+    [INODE_TABLE+16*i+2]=0;
+    [INODE_TABLE+16*i+0]=DATA;
+    [INODE_TABLE+16*i+8]=-1;
+    [INODE_TABLE+16*i+9]=-1;
+    [INODE_TABLE+16*i+10]=-1;
+    [INODE_TABLE+16*i+11]=-1;
+    [INODE_TABLE+16*i+3]=[processTable+3];
+    [INODE_TABLE+16*i+4]=perms;  
+    [ROOT_FILE+8*i+0]=fileName;
+    [ROOT_FILE+8*i+1]=0;
+    [ROOT_FILE+8*i+2]=DATA;
+    [ROOT_FILE+8*i+3]=[USER_TABLE+2*[processTable+3]];
+    [ROOT_FILE+8*i+4]=perms;
+    R11=0;
+    goto ex;
+endif;
+
+//DELETE 
+if(syscall==4) then
+    alias fileName R5;
+    fileName=[[PTBR+2*(userSP-4)/512]*512+(userSP-4)%512];
+    alias i R6;
+    i=1;
+    while(i<MAX_FILE_NUM) do
+        if([INODE_TABLE+16*i+1]==fileName) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+    if(i==MAX_FILE_NUM) then
+        R11=0;
+        goto ex;
+    endif;
+    alias inodeEntry R7;
+    R8=i;
+    inodeEntry=INODE_TABLE+16*i;
+    if([inodeEntry]!=DATA) then
+        R11=-1;
+        goto ex;
+    endif;
+    if([inodeEntry+4]==EXCLUSIVE) then 
+        if([inodeEntry+3]!=[SYSTEM_STATUS_TABLE+0] && [SYSTEM_STATUS_TABLE]!=-1) then
+            R11=-1;
+            goto ex;
+        endif;
+    endif;
+    multipush(R1,R2,R3,R4,R5,R6,R7);
+    R1=4;
+    R3=curPID;
+    R2=i;
+    call MOD_0;
+    multipop(R1,R2,R3,R4,R5,R6,R7);
+    //check if file is open
+    alias status R9;
+    status=FILE_STATUS_TABLE+4*i;
+    if([status+1]!=-1) then
+        multipush(R1,R3);
+        R1=5;
+        R3=curPID;
+        R2=i;
+        call MOD_0;
+        multipop(R1,R3);
+        R11=-2;
+        goto ex;
+    endif;
+    //release all blocks used by the file and buffer table
+    i=8;
+    while(i<12) do
+        alias blockNum R10;
+        blockNum=[inodeEntry+i];   
+        alias buffEntry R12;
+        buffEntry=BUFFER_TABLE+(blockNum%MAX_BUFFER)*4;
+        if([inodeEntry+i]!=-1) then
+            if([buffEntry]==blockNum && [buffEntry+1]==1) then
+                [buffEntry+1]=0;
+            endif;
+            multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+            R1=4;
+            R3=curPID;
+            R2=blockNum;
+            call MOD_2;
+            multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+        endif;
+        i=i+1;
+    endwhile;
+    //clear inode entry and root entry
+    i = 0;
+    while(i<16) do
+        if(i<5) then
+            [ROOT_FILE+R8*8+i]=-1;
+        endif;
+        [inodeEntry+i]=-1;
+        i=i+1;
+   endwhile;
+   multipush(R1,R3);
+   R1=5;
+   R2=curPID;
+   call MOD_0;
+   multipop(R1,R3);
+   R11=0;
+   goto ex;
+endif;
+
+ex:
+  SP=userSP;
+  [processTable+9]=0;
+  [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=R11;
+  ireturn;

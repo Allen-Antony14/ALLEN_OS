@@ -1,0 +1,42 @@
+//shutdown syscall-21
+alias userSP R1;
+alias curPID R2;
+alias processTable R3;
+userSP=SP;
+curPID=[SYSTEM_STATUS_TABLE+1];
+R3=PROCESS_TABLE+curPID*16;
+
+[processTable+9]=21;
+[processTable+13]=userSP;
+SP=[processTable+11]*512-1;
+
+if(curPID!=1 || [processTable+3]!=1) then
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=-1;
+    SP=[processTable+13];
+    [processTable+9]=0;
+    ireturn;
+endif;
+
+multipush(R1,R2,R3);
+R1=1;
+R2=curPID;
+R3=59;
+R4=3;
+call MOD_4;
+R1=1;
+R2=curPID;
+R3=60;
+R4=4;
+call MOD_4;
+R1=1;
+R2=curPID;
+R3=61;
+R4=2;
+call MOD_4;
+R1=1;
+R2=curPID;
+R3=62;
+R4=5;
+call MOD_4;
+multipop(R1,R2,R3);
+halt;

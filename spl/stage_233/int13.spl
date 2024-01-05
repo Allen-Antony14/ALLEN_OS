@@ -1,0 +1,79 @@
+alias userSP R1;
+R1=SP;
+
+alias curPID R2;
+R2=[SYSTEM_STATUS_TABLE+1];
+
+alias processTable R3;
+R3=PROCESS_TABLE+curPID*16;
+
+//extract syscall, switch to kernel stack, set mode flag
+alias syscall R4;
+R4=[[PTBR+2*(userSP-5)/512]*512+(userSP-5)%512];
+
+[processTable+13]=userSP;
+SP=[processTable+11]*512-1;
+[processTable+9]=R4;
+
+//semget
+if(R4==17) then
+    //free entry in per process resource table
+    alias i R5;
+    alias resTable R6;
+    R6=(([processTable++11]+1)*512)-16;
+    i=0;
+    while([resTable+2*i]!=-1) do
+        i=i+1;
+    endwhile;
+    if(i==16) then
+        [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=-1;
+        SP=[processTable+13];
+        [processTable+9]=0;
+        ireturn;
+    endif;
+    resTable=resTable+2*i;
+    [resTable]=1;
+    //acquire semaphore
+    multipush(R1,R2,R3,R4,R5,R6);
+    R1=6;
+    R2=curPID;
+    call MOD_0;
+    multipop(R1,R2,R3,R4,R5,R6);
+    if(R0==-1) then
+        [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=-2;
+        SP=[processTable+13];
+        [processTable+9]=0;
+        ireturn;
+    endif;
+    [resTable+1]=R0;
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=R5;
+    SP=[processTable+13];
+    [processTable+9]=0;
+    ireturn;
+endif;
+
+//semrelease
+if(R4==18) then
+    alias semid R5;
+    R5=[[PTBR+2*(userSP-4)/512]*512+(userSP-4)%512];
+    alias resTable R6;
+    R6=(([processTable+11]+1)*512)-16;
+    if(semid<0 || semid>7 || [resTable+2*semid]!=-1) then
+        SP=[processTable+13];
+        [processTable+9]=0;
+        [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=-1;
+        ireturn;
+    endif;
+    multipush(R1,R2,R3,R4,R5,R6);
+    R1=7;
+    R3=curPID;
+    R2=[resTable+2*semid+1];
+    call MOD_0;
+    multipop(R1,R2,R3,R4,R5,R6);
+    [resTable]=-1;
+    [resTable+1]=-1;
+    SP=[processTable+13];
+    [processTable+9]=0;
+    [[PTBR+2*(userSP-1)/512]*512+(userSP-1)%512]=0;
+    ireturn;
+endif;
